@@ -7,6 +7,7 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 && sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends fish gh
 sudo chsh -s /usr/bin/fish $USER
+fish ./setup.fish
 
 # http://asdf-vm.com/guide/getting-started.html#_3-install-asdf
 git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.10.2
@@ -23,3 +24,4 @@ asdf plugin add deno
 # asdf install deno latest && asdf global deno latest
 
 go install github.com/jesseduffield/lazygit@latest
+asdf reshim
