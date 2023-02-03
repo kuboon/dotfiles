@@ -1,0 +1,598 @@
+#!/bin/bash
+# I'm writing this in BASH because I hate myself, apparently.
+
+list_branches() {
+    git for-each-ref refs/heads --format="%(refname:short)"
+}
+
+list_remote_branches() {
+    git for-each-ref refs/heads --format="%(refname:short)"
+}
+
+git_root() {
+    git rev-parse --show-toplevel
+}
+
+confirm () {
+    read -r -n 1 -p "${1:-Are you sure? [y/N]} " response
+    case $response in
+        [yY]) true ;;
+        *) false ;;
+    esac
+}
+
+confirmYes () {
+    read -r -n 1 -p "${1:-Are you sure? [Y/n]} " response
+    case $response in
+        [nN]) false ;;
+        *) true ;;
+    esac
+}
+
+case "$1" in
+'?' | status)
+# TODO: Display help if not inside a repo
+# TODO: figure out how to git config --global color.status always automatically.
+git -c color.status=always status \
+| grep -v 'On branch' \
+| grep -v '(use "git push" to publish your local commits)' \
+| grep -v '(use "git reset HEAD <file>..." to unstage)' \
+| grep -v '(use "git add <file>..." to update what will be committed)' \
+| grep -v '(use "git checkout -- <file>..." to discard changes in working directory)' \
+| grep -v '(use "git add <file>..." to include in what will be committed)' \
+| grep -v 'nothing added to commit but untracked files present (use "git add" to track)'
+;;
+
+'=' | stage)
+if [ -z "$2" ]; then
+    echo Staging all modified files
+    git add -u :/
+else
+    echo Staging "${@:2}"
+    git add --all "${@:2}"
+fi
+;;
+
+unstage)
+echo Unstaging
+if [ -z "$2" ]; then
+    echo The stage has been reset.
+    git reset HEAD
+else
+    git reset HEAD "${@:2}"
+fi
+;;
+
+'#' | tag)
+echo Tagging
+git tag "$2"
+;;
+
+untag)
+# Delete tag (if tag exists)
+if git rev-parse "$2" >/dev/null 2>&1
+then
+  echo Deleting tag "$2"
+  git tag -d "$2"
+fi
+# Get local branch name
+local_branch=$(git rev-parse --abbrev-ref HEAD)
+# Get associated remote
+remote=$(git config --get branch.$local_branch.remote)
+# If tag is not present on remote, stop here.
+exist=$(git ls-remote --tags "$remote" "$2")
+if [ "$exist" != '' ]
+then
+  # Prompt user to delete on upstream.
+  read -e -p "Would you like to delete the tag on remote '${remote}'? [Y/n]: " deltag
+  deltag=${deltag:-Y}
+  case "$deltag" in
+  [Yy] | [Yy][Ee][Ss] )
+    git push --delete "$remote" "$2"
+  ;;
+  [Nn] | [Nn][Oo] )
+  ;;
+  esac
+fi
+;;
+
+'+' | add)
+# The only real difference between add and stage is
+# add will tab-complete with untracked files, while
+# stage tab-completes with tracked files
+echo Staging "${@:2}"
+git add --all "${@:2}"
+;;
+
+'-' | rm)
+echo Removing tracked files
+git rm -r "$2"
+# Check to see if there are still remaining files
+if [ -d "$2" ]
+then
+  # Prompt user to delete untracked files
+  read -n 1 -p "Would you like to delete the untracked files as well? [Y/n]: " answer
+  echo -e '\n'
+  answer=${answer:-Y}
+  case "$answer" in
+  [Yy] )
+    rm -Rf "$2"
+  ;;
+  [Nn] )
+  ;;
+  esac
+fi
+;;
+
+reset)
+echo Resetting
+if [ -z "$2" ]; then
+    # OK so I typed "reset" instead of "unstage" (because unstage == git reset --mixed)
+    # and lost 3 hours of work. So we're not using this command anymore.
+    #git checkout -f HEAD
+    # We can achieve the same effect of reseting the working directory using git stash,
+    # which has the benefit of being reversable.
+    git stash save
+    echo The working directory has been reset.
+else
+    git checkout "${@:2}"
+fi
+;;
+
+
+msg)
+msg_file="$(git_root)/.git/GITGUI_MSG"
+current="$(cat $msg_file 2>/dev/null)"
+if [ -z "$2" ]; then
+    # Interactive
+    parent_commit="$(git log --abbrev-commit -1 --pretty=format:'%C(bold blue)%s%Creset %Cgreen(%cr)%Creset' 2>/dev/null)" && echo "Parent commit: $parent_commit"
+    read -e -p 'Message: ' -i "$current" msg
+    echo "$msg" > "$msg_file"
+else
+    # Non-interactive
+    msg="${@:2}"
+    echo "$msg" > "$msg_file"
+fi
+;;
+
+'!' | commit)
+msg_file="$(git_root)/.git/GITGUI_MSG"
+current="$(cat $msg_file 2>/dev/null)"
+if [ -z "$2" ]; then
+    parent_commit="$(git log --abbrev-commit -1 --pretty=format:'%C(bold blue)%s%Creset %Cgreen(%cr)%Creset' 2>/dev/null)" && echo "Parent commit: $parent_commit"
+    # Interactive
+    if [[ "$OSTYPE" == darwin* ]]; then
+        if [[ -n "$current" ]]; then
+            if confirmYes "Message: $current [Y/n]"; then
+                msg="$current"
+            else
+                echo ""
+                read -e -p 'Message: ' msg
+            fi
+        else
+            read -e -p 'Message: ' msg
+        fi
+    else
+        read -e -p 'Message: ' -i "$current" msg
+    fi
+    echo "$msg" > "$msg_file"
+    set -e
+    git commit -m "$msg"
+    rm "$msg_file"
+else
+    # Non-interactive
+    msg="${@:2}"
+    git commit -m "$msg"
+fi
+;;
+
+uncommit)
+    echo Undoing last commit
+    git reset --soft HEAD~1
+;;
+
+amend | ammend)
+git commit --amend --no-edit
+;;
+
+'@' | branch)
+echo 'Switching to branch'
+if [ -z "$2" ]; then
+    echo '! Specify branch name'
+else
+    #git stash save --include-untracked --quiet 'get-branch autostash' # Save branch index state
+    if git rev-parse --verify --quiet "$2" > /dev/null; then
+        git checkout "$2"
+    else
+        git checkout -b "$2"
+    fi
+    #git stash pop --quiet # Restore branch index state
+fi
+;;
+
+rmbranch)
+if [ -z "$2" ]; then
+    echo '! Specify branch name'
+    exit;
+fi
+echo "Delete branch $2"
+if ! git rev-parse --quiet --verify "$2" >/dev/null
+then
+    echo "Branch not found: '$2'"
+    exit;
+fi
+# else
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$current_branch" == "$2" ]]; then
+    if confirm "You are currently on the branch '$2'! Do you want me to switch to 'master'?"; then
+        echo ''
+        git checkout master
+    else
+        echo ''
+    fi
+fi
+
+git branch -d "$2" &>/dev/null
+if [[ "$?" -ne 0 ]]; then
+    if confirm "The branch '$2' hasn't been merged. Are sure you want to delete this branch?"; then
+        echo ''
+        git branch -D "$2"
+    else
+        echo ''
+    fi
+fi
+
+ls $(git_root)/.git/refs/remotes/*/$2 &>/dev/null
+if [[ "$?" -eq 0 ]]; then
+    if confirm 'Would you like to delete this branch on the remote as well?'; then
+        echo ''
+        git push origin --delete "$2"
+    else
+        echo ''
+        echo 'OK, just thought I'"'"'d ask.'
+    fi
+fi
+;;
+
+mvbranch)
+echo 'Move branch'
+if [ -z "$2" ]; then
+    echo '! Specify branch name'
+    exit;
+fi
+if ! git rev-parse --quiet --verify "$2" >/dev/null
+then
+    echo "Branch not found: '$2'"
+    exit;
+fi
+if [ -z "$3" ]; then
+    echo '! Specify commit or reference you want to become the branch head'
+    exit;
+fi
+# else
+# Get local branch name
+local_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$2" = "$local_branch" ]]; then
+  git reset --hard "$3"
+else
+  git branch -f "$2" "$3"
+fi
+;;
+
+branches)
+# Make a temporary directory
+TEMP=$(mktemp -d)
+trap "rm -rf $TEMP" EXIT
+# List all merged branches to >merged.branches
+git branch --merged | sed 's/^..//' > "$TEMP/merged.branches"
+# Pretty-print local branches
+git for-each-ref --sort=-committerdate refs/heads \
+--format='%(HEAD) %(color:green)%(committerdate:relative)%(color:reset)|%(color:red)%(objectname:short)%(color:reset)|%(color:yellow)%(refname:short)%(color:reset) -> %(upstream:short)' > "$TEMP/local.branches"
+sed -i'' -e 's/ -> $/ -> \?/g'  "$TEMP/local.branches"
+while read -r branch; do
+    sed -i'' -e 's~'${branch}'[[:>:]].*~&|(merged)~' "$TEMP/local.branches"
+done < "$TEMP/merged.branches"
+# Pretty-print remote branches
+git for-each-ref --sort=-committerdate refs/remotes \
+--format='%(HEAD) %(color:green)%(committerdate:relative)%(color:reset)|%(color:red)%(objectname:short)%(color:reset)|%(color:blue)%(refname:short)%(color:reset)' > "$TEMP/remote.branches"
+# Print them in columns
+cat "$TEMP/local.branches" "$TEMP/remote.branches" | vl -s'\|'
+;;
+
+fetch)
+echo Updating
+if [ -z "$2" ]; then
+    git fetch --all --prune
+    branches="$(list_branches)"
+else
+    branches = "${@:2}"
+    git fetch --prune "$branches"
+fi
+# Fast-forward local branches. I owe a lot to http://stackoverflow.com/a/24451300/2168416
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+for local_branch in $branches; do
+    remote=$(git config --get branch.$local_branch.remote)
+    remote_branch=$(git config --get branch.$local_branch.merge | sed 's:refs/heads/::')
+    # Git throws an error if we try the fetch command on the current branch. Sheesh
+    if [ "$current_branch" = "$local_branch" ]; then
+        git merge --ff-only "$remote/$remote_branch"
+    else
+        if git fetch $remote $remote_branch:$local_branch; then
+            echo "fetched $local_branch <- $remote/$remote_branch"
+        # Detect and delete branches not on remote
+        else
+            if confirm "Failed to fast forward local branch '$local_branch'. Do you want to delete the local branch if it's merged?"; then
+                echo ''
+                git branch -d "$local_branch"
+            else
+                echo ''
+            fi
+        fi
+    fi
+done
+;;
+
+ff)
+git pull --ff-only
+;;
+
+fff)
+# Get local branch name
+local_branch=$(git rev-parse --abbrev-ref HEAD)
+# Move HEAD pointer
+git checkout HEAD~0 &>/dev/null
+# Delete local branch
+git branch -D "$local_branch" &>/dev/null
+# Re-checkout the local branch
+git checkout "$local_branch"
+;;
+
+ignore)
+GIT_ROOT=$(git_root)
+CWD=$(pwd)
+cd "$GIT_ROOT"
+if [[ -e ".gitignore" ]] && grep "$2" ".gitignore" >/dev/null
+then
+    echo "$2 already in .gitignore"
+else
+    echo "Adding $2 to .gitignore"
+    echo "$2" >> ".gitignore"
+fi
+cd "$CWD"
+;;
+
+diff)
+# Note: we use --ignore-space-change with every diff because
+# changing the amount of indentation of large chunks of code
+# is common in Python and CoffeeScript.
+# Update: I now use --ignore-all-space, because I mostly work
+# in JavaScript, HTML, and CSS, and other people are terrible
+# at indenting their code.
+if [ -z "$2" ]; then
+    echo 'Compare working tree with HEAD'
+    git diff --ignore-all-space --ignore-blank-lines HEAD
+else
+    if [ -z "$3" ]; then
+        if [ "$2" = 'STAGE' ]; then
+            echo 'Compare working tree with stage'
+            git diff --ignore-all-space --ignore-blank-lines
+        else
+            echo "Compare working tree with $2"
+            git diff --ignore-all-space --ignore-blank-lines "$2"
+        fi
+    else
+        if [ "$2" = 'STAGE' ]; then
+            echo "Compare stage with $3"
+            git diff --cached --ignore-all-space --ignore-blank-lines "$3"
+        else
+            echo "Compare $2 with $3"
+            git diff --ignore-all-space --ignore-blank-lines "$2" "$3"
+        fi
+    fi
+fi
+;;
+
+review)
+echo 'Compare stage with HEAD'
+git diff --cached --ignore-all-space --ignore-blank-lines HEAD
+;;
+
+^ | push)
+echo 'Pushing'
+tags="$(git tag --points-at HEAD | tr '\n' ' ')"
+follow_tags=''
+if [ ! -z "$tags" ]; then
+    if confirm "Would you like to push these tags (${tags}) to the remote as well?"; then
+        local_branch=$(git rev-parse --abbrev-ref HEAD)
+        remote=$(git config --get branch.$local_branch.remote)
+        echo ''
+        follow_tags='--follow-tags'
+    else
+        echo ''
+        echo 'OK, just thought I'"'"'d ask.'
+    fi
+fi
+# Check to see if upstream is set.
+if git rev-parse --abbrev-ref @{upstream} >/dev/null ; then
+    git push ${follow_tags}
+else
+    # Get local branch name
+    local_branch=$(git rev-parse --abbrev-ref HEAD)
+    # Check for multiple remotes
+    remote_count=$(git remote show | wc -l | sed 's/[[:space:]]*//g')
+    remotes=$(git remote show | tr '\n' ' ' | sed 's/[[:space:]]*$//g')
+    if [ "$remote_count" = "0" ]; then
+        echo "No remotes configured yet"
+        exit
+    elif [ "$remote_count" = "1" ]; then
+        # If only one remote
+        remote="$remotes"
+    else
+        read -p "Which remote to push? (${remotes}): " remote
+    fi
+    read -p "Choose name for branch on '${remote}' [${local_branch}]: " remote_branch
+    if [ "$remote_branch" = "" ]; then
+        remote_branch="$local_branch"
+    fi
+    echo "I will run git push --set-upstream ${remote} ${remote_branch} ${follow_tags}"
+    git push --set-upstream ${remote} ${remote_branch} ${follow_tags}
+fi
+;;
+
+^^ | push!)
+echo 'Force push with lease'
+git push --force-with-lease
+;;
+
+remote)
+read -ep "What is the URL for this remote repo?: " remote_url
+read -ep "Choose an alias for this remote [origin]: " remote_alias
+if [ "$remote_alias" = "" ]; then
+    remote_alias="origin"
+fi
+git remote add "$remote_alias" "$remote_url"
+;;
+
+clone)
+# Github username, if available
+github_user=$(git config github.user)
+
+# Turn "username/repo" into full Github URL
+if [[ "$2" =~ ^[^/]+/[^/]+$ ]]
+then
+    url="https://github.com/$2"
+# Turn "repo" into "username/repo" Github URL
+elif [[ "$2" =~ ^[^/]+$ ]] && ! [ -z "$github_user" ]
+then
+    url="https://github.com/${github_user}/$2"
+else
+    url="$2"
+fi
+
+# Extract branch from URL
+if [[ "$url" == *"#"* ]]
+then
+    clone_branch=${url##*#}
+    url=${url%#*}
+fi
+
+# Clone specified branch, or default branch if not specified
+if [ -z "$clone_branch" ]; then
+    echo "Cloning default branch of $url"
+    git clone --recurse-submodules "$url"
+else
+    echo "Cloning $clone_branch branch of $url"
+    git clone --recurse-submodules -b "$clone_branch" "$url"
+fi
+;;
+
+squash)
+# I implement squash a little differently than most.
+# 1) Rebase squashing aggregates commit messages, which is usually
+#   counter to the purpose of squashing, which is to hide the fact
+#   that a change took several real commits.
+# 2) Rebasing also deletes commits by default, which is problematic
+#   if you have pushed those commits to the server already.
+# This solution is more gentle in that it creates a new commit with
+# a new commit message containing the same changes as the old
+# series of commits, but doesn't delete the old commits, leaving them
+# as a branch.
+# TODO: check argument is numeric
+if [[ "$2" =~ ^[0-9]+$ ]]
+then
+    echo "Squash the following commits together:"
+    git log --abbrev-commit \
+            --color \
+            --graph \
+            --ancestry-path \
+            --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' \
+            HEAD...HEAD~$2
+    echo "The parent commit will be:"
+    git log --abbrev-commit \
+            --color \
+            --graph \
+            --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' \
+            -n 1 \
+            HEAD~$2
+    def_msg="$(git show -s --format=%s HEAD~$(($2-1)))"
+    if [[ "$OSTYPE" == darwin* ]]; then
+        echo "Original message: $def_msg"
+        read -e -p 'Message: ' msg
+    else
+        read -e -p 'Message: ' -i "$def_msg" msg
+    fi
+    git stash save --include-untracked --quiet 'get-squash autostash'
+    git reset --soft HEAD~$2
+    git commit -m "$msg"
+    git stash pop --quiet
+else
+    echo "The second argument is expected to be an integer."
+fi
+;;
+
+log)
+git log --color \
+        --graph \
+        --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<name-%G?>{<%an>}{%GS}</name>%Creset <color-%G?>{%Cgreen}{%Cred}</color><validity-%G?>%Creset' \
+        --abbrev-commit -10 "${@:2}" \
+| sed 's/<name-N>{\(.*\)}{\(.*\)}<\/name>/\1/g' \
+| sed 's/<name-.>{\(.*\)}{\(.*\)}<\/name>/\2/g' \
+| sed 's/<color-N>{\(.*\)}{\(.*\)}<\/color>//g' \
+| sed 's/<color-[GUX]>{\(.*\)}{\(.*\)}<\/color>/\1/g' \
+| sed 's/<color-[YBE]>{\(.*\)}{\(.*\)}<\/color>/\2/g' \
+| sed 's/<validity-N>//g' \
+| sed 's/<validity-G>/good/g' \
+| sed 's/<validity-U>/unknown/g' \
+| sed 's/<validity-X>/expired/g' \
+| sed 's/<validity-Y>/expired/g' \
+| sed 's/<validity-B>/bad/g' \
+| sed 's/<validity-E>/error/g'
+echo ''
+;;
+
+hist)
+git reflog HEAD@{now} --date=relative \
+|awk '$5 ~ /checkout:/ { sub(/HEAD@/, "", $2); sub(/:/, "", $4); if (!seen[$10]++) print $10, $2, $3, $4}'
+echo ''
+;;
+
+submodule)
+CWD=$(pwd)
+gitroot=$(git_root)
+shopt -s globstar
+# For every git repository found within...
+for dir in $gitroot/*/**/.git
+do
+    cd "$dir"
+    # Get relative directory name
+    reldir=${dir#$gitroot/}
+    reldir=${reldir%/.git}
+    echo "[submodule \"$reldir\"]"
+    # Get local branch name
+    local_branch=$(git rev-parse --abbrev-ref HEAD)
+    # Get associated remote
+    remote=$(git config --get branch.$local_branch.remote)
+    # Get url of remote
+    url=$(git config --get remote.$remote.url)
+    echo "url = $url"
+    cd "$gitroot"
+    git submodule add "$url" "$reldir"
+    echo ''
+done
+cd "$gitroot"
+git submodule init
+cd "$CWD"
+;;
+
+fix)
+if [[ "$2" = "color" ]]; then
+    git config --global color.ui always
+fi
+;;
+
+*)
+echo "Passing args straight to git..."
+git $@
+;;
+
+esac

@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+fish_add_path ~/dotfiles/bin
 
 # https://unix.stackexchange.com/a/631801
 function add_history_entry
@@ -12,4 +13,4 @@ function add_history_entry
   and history merge
 end
 
-add_history_entry 'git fetch --prune --tags -f'
+add_history_entry 'git fetch --ptf'
