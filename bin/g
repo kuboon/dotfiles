@@ -1,4 +1,5 @@
 #!/bin/bash
+# https://github.com/wmhilton/g
 # I'm writing this in BASH because I hate myself, apparently.
 
 list_branches() {
