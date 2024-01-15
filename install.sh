@@ -18,3 +18,6 @@ echo '~/.local/bin/mise activate fish | source' >> ~/.config/fish/config.fish
 mise u -g golang@latest
 mise x -- go install github.com/jesseduffield/lazygit@latest
 mise reshim
+
+git config --global user.email "kuboon@trick-with.net"
+git config --global user.name "Ohkubo Kohei"
