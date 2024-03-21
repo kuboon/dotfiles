@@ -20,6 +20,3 @@ curl https://mise.jdx.dev/install.sh | sh
 echo '~/.local/bin/mise activate fish | source' >> ~/.config/fish/config.fish
 
 mise u -gy lazygit
-
-git config --global user.email "kuboon@trick-with.net"
-git config --global user.name "Ohkubo Kohei"
