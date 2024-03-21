@@ -13,4 +13,5 @@ function add_history_entry
   and history merge
 end
 
-add_history_entry 'git fetch --ptf'
+add_history_entry 'git fetch -ptf'
+add_history_entry 'gh pr view --json url -q.url'
