@@ -16,4 +16,5 @@ end
 add_history_entry 'git fetch -ptf'
 add_history_entry 'gh pr view --json url -q.url'
 
+mkdir -p ~/.config/fish/functions
 cp ./fish/functions/* ~/.config/fish/functions
