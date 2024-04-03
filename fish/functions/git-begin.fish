@@ -1,9 +1,9 @@
 function git-begin
-  read -P "Jira: " jira
   read -P "prefix[fix]: " prefix
   if test -z "$prefix"
     set prefix "fix"
   end
+  read -P "Jira: " jira
   read -P "slug: " slug
   read -P "title[$slug]: " title
   if test -z "$title"
