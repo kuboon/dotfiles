@@ -17,5 +17,6 @@ function git-begin
   git switch -c $b
   git commit --allow-empty -m "$t"
   git push --set-upstream origin $b
-  gh pr create -a @me -b "$ticket_number" --draft --base $c -t "$t" $ARGV
+  gh pr create -a @me --draft --base $c -t "$t" -b "$jira" $ARGV
+  gh pr view --json url -q.url | xargs $BROWSER
 end
