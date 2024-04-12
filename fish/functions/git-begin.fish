@@ -11,12 +11,19 @@ function git-begin
   end
 
   set b "$prefix/$jira-$slug"
-  set t "$jira $title"
+  set title "$jira $title"
 
-  set c (git branch --show-current)
+  set base (git branch --show-current)
+  set basepr (gh pr view --json number -q.number 2>/dev/null)
+  if test -z "$basepr"
+    set body "$jira"
+  else
+    set body "$jira\nbase: #$basepr"
+  end
+
   git switch -c $b
-  git commit --allow-empty -m "$t"
+  git commit --allow-empty -m "$title"
   git push --set-upstream origin $b
-  gh pr create -a @me --draft --base $c -t "$t" -b "$jira" $ARGV
+  gh pr create -a @me --draft --base $base -t "$title" -b "$body" $ARGV
   gh pr view --json url -q.url | xargs $BROWSER
 end
