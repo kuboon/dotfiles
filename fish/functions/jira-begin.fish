@@ -1,4 +1,4 @@
-function git-begin
+function jira-begin
   read -P "prefix[fix]: " prefix
   if test -z "$prefix"
     set prefix "fix"
