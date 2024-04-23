@@ -24,6 +24,6 @@ function jira-begin
   git switch -c $b
   git commit --allow-empty -m "$title"
   git push --set-upstream origin $b
-  gh pr create -a @me --draft --base $base -t "$title" -b "$body" $ARGV
+  gh pr create -a @me --draft --base $base -t "$title" -b "$body" $argv
   gh pr view --json url -q.url | xargs $BROWSER
 end
