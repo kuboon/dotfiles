@@ -1,24 +1,24 @@
-function jira-begin
+function git-begin
   read -P "prefix[fix]: " prefix
   if test -z "$prefix"
     set prefix "fix"
   end
-  read -P "Jira: " jira
+  read -P "Ticket: " ticket
   read -P "slug: " slug
   read -P "title[$slug]: " title
   if test -z "$title"
     set title $slug
   end
 
-  set b "$prefix/$jira-$slug"
-  set title "$jira $title"
+  set b "$prefix/$ticket-$slug"
+  set title "$ticket $title"
 
   set base (git branch --show-current)
   set basepr (gh pr view --json number -q.number 2>/dev/null)
   if test -z "$basepr"
-    set body "$jira"
+    set body "$ticket"
   else
-    set body "$jira\nbase: #$basepr"
+    set body "$ticket\nbase: #$basepr"
   end
 
   git switch -c $b
