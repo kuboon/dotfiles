@@ -12,10 +12,10 @@ sudo chsh -s /usr/bin/fish $USER
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
-curl https://mise.jdx.dev/install.sh | sh
+curl https://mise.run | sh
 echo '~/.local/bin/mise activate fish | source' >> ~/.config/fish/config.fish
 
-mise u -gy lazygit
+~/.local/bin/mise u -gy lazygit
 
 mkdir -p ~/.ssh
 echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
