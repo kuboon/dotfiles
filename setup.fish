@@ -15,6 +15,8 @@ end
 
 add_history_entry 'git fetch -ptf'
 add_history_entry 'gh pr view --json url -q.url | xargs $BROWSER'
+add_history_entry 'git config user.name "Ohkubo Kohei"; git config user.email "ohkubo@heartrails.com"'
+add_history_entry 'git config user.name "Ohkubo Kohei"; git config user.email "o@kbn.one"'
 
 mkdir -p ~/.config/fish/functions
 cp ./fish/functions/* ~/.config/fish/functions
