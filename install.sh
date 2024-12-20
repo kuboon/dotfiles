@@ -13,7 +13,8 @@ fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
 curl https://mise.run | sh
-echo '~/.local/bin/mise activate fish | source' >> ~/.config/fish/config.fish
+echo 'eval "$(~/.local/bin/mise activate --shims bash)"' >> ~/.bashrc
+echo '~/.local/bin/mise activate --shims fish | source' >> ~/.config/fish/config.fish
 
 ~/.local/bin/mise u -gy lazygit
 
