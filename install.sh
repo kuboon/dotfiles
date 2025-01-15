@@ -20,3 +20,4 @@ echo '~/.local/bin/mise activate --shims fish | source' >> ~/.config/fish/config
 
 mkdir -p ~/.ssh
 echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
+git config alias.pushtag "!f(){ git tag -a -f \$1 -m\"\$2\"; git push -f origin \$1 ; }; f"
