@@ -2,7 +2,7 @@
 set -ue
 
 sudo apt update
-DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends fish gh
+DEBIAN_FRONTEND=noninteractive sudo apt upgrade && sudo apt-get -y install --no-install-recommends fish gh
 
 sudo chsh -s /usr/bin/fish $USER
 fish ./setup.fish
