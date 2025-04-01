@@ -20,4 +20,4 @@ add_history_entry 'git config user.email "o@kbn.one"'
 add_history_entry 'git-begin --draft'
 add_history_entry 'gh auth login'
 
-set -a fish_function_path (pwd)/fish/functions
+set -Ua fish_function_path (pwd)/fish/functions
