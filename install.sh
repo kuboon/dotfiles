@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
 set -ue
 
+(type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
+	&& sudo mkdir -p -m 755 /etc/apt/keyrings \
+        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+
+if grep -q "bullseye" /etc/os-release; then
+  echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/4/Debian_11/ /' | sudo tee /etc/apt/sources.list.d/shells:fish:release:4.list
+  curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:4/Debian_11/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/shells_fish_release_4.gpg > /dev/null
+fi
+if grep -q "bookworm" /etc/os-release; then
+  echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/4/Debian_12/ /' | sudo tee /etc/apt/sources.list.d/shells:fish:release:4.list
+  curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:4/Debian_12/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/shells_fish_release_4.gpg > /dev/null
+fi
+
 sudo apt update
-DEBIAN_FRONTEND=noninteractive sudo apt upgrade && sudo apt-get -y install --no-install-recommends fish gh
+DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends fish gh
 
 sudo chsh -s /usr/bin/fish $USER
 fish ./setup.fish
