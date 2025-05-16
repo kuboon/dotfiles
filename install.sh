@@ -34,6 +34,10 @@ mkdir -p ~/.ssh
 echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
 
 git config --global user.name "Ohkubo KOHEI";
+git config --global gpg.format ssh
+git config --global user.signingkey "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICHoDCdQytihD5c8WkXQrjPis4+ixYhy9T0BQseTOL/M"
+git config --global commit.gpgsign true
+
 git config --global alias.sw switch
 git config --global alias.pushtag "!f(){ git tag -a -f \$1 -m\"\$2\"; git push -f origin \$1 ; }; f"
 
