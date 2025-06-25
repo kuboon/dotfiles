@@ -28,6 +28,7 @@ curl https://mise.run | sh
 echo 'eval "$(~/.local/bin/mise activate --shims bash)"' >> ~/.bashrc
 echo '~/.local/bin/mise activate --shims fish | source' >> ~/.config/fish/config.fish
 
+~/.local/bin/mise settings add idiomatic_version_file_enable_tools ruby
 ~/.local/bin/mise u -gy lazygit
 
 mkdir -p ~/.ssh
