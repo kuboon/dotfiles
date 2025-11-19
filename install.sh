@@ -5,35 +5,27 @@ set -ue
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends wget gpg
 
-sudo mkdir -p -m 755 /etc/apt/keyrings \
-        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-
 if grep -q "bullseye" /etc/os-release; then
   echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/4/Debian_11/ /' | sudo tee /etc/apt/sources.list.d/shells:fish:release:4.list
   wget -qO- https://download.opensuse.org/repositories/shells:fish:release:4/Debian_11/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/shells_fish_release_4.gpg > /dev/null
 fi
-if grep -q "bookworm" /etc/os-release; then
-  echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/4/Debian_12/ /' | sudo tee /etc/apt/sources.list.d/shells:fish:release:4.list
-  wget -qO- https://download.opensuse.org/repositories/shells:fish:release:4/Debian_12/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/shells_fish_release_4.gpg > /dev/null
-fi
 
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends gh fish
-
 
 sudo chsh -s /usr/bin/fish $USER
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
 wget -qO- https://mise.run | sh
-echo 'eval "$(~/.local/bin/mise activate --shims bash)"' >> ~/.bashrc
-echo '~/.local/bin/mise activate --shims fish | source' >> ~/.config/fish/config.fish
+install_path="${MISE_INSTALL_PATH:-$HOME/.local/bin/mise}"
+eval "$($install_path activate --shims bash)"
+echo 'eval "$('"$install_path"' activate --shims bash)"' >> ~/.bashrc
+echo 'eval "$('"$install_path"' activate --shims fish)"' >> ~/.config/fish/config.fish
 
-~/.local/bin/mise settings add idiomatic_version_file_enable_tools ruby
-~/.local/bin/mise u -gy lazygit
+mise settings add idiomatic_version_file_enable_tools ruby
+mise u -gy lazygit
+mise u -gy gh
 
 mkdir -p ~/.ssh
 echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
