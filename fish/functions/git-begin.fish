@@ -23,7 +23,7 @@ function git-begin
   if test -z "$basepr"
     set body "$ticket"
   else
-    set body "$ticket\\nbase: #$basepr"
+    set body "$ticket\nbase: #$basepr"
   end
 
   git switch -c $b
