@@ -28,6 +28,7 @@ mise u -gy lazygit gh
 
 ln -sf ~/dotfiles/lazygit/config.yml ~/.config/lazygit/config.yml
 
+mkdir -p ~/.claude
 ln -sf ~/dotfiles/skills ~/.claude/skills
 
 mkdir -p ~/.ssh
