@@ -19,5 +19,6 @@ add_history_entry 'git config user.email "ohkubo@heartrails.com"'
 add_history_entry 'git config user.email "o@kbn.one"'
 add_history_entry 'git-begin --draft'
 add_history_entry 'gh auth login'
+add_history_entry 'curl -fsSL https://opencode.ai/install | bash'
 
 set -Ua fish_function_path (pwd)/fish/functions

@@ -2,22 +2,22 @@
 set -ue
 
 
-sudo apt update
-DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends wget gpg
 
 if grep -q "bullseye" /etc/os-release; then
+  sudo apt-get update
+  DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends gpg
   echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/4/Debian_11/ /' | sudo tee /etc/apt/sources.list.d/shells:fish:release:4.list
-  wget -qO- https://download.opensuse.org/repositories/shells:fish:release:4/Debian_11/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/shells_fish_release_4.gpg > /dev/null
+  curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:4/Debian_11/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/shells_fish_release_4.gpg > /dev/null
 fi
 
-sudo apt update
+sudo apt-get update
 DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends fish
 
 sudo chsh -s /usr/bin/fish $USER
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
-wget -qO- https://mise.run | sh
+curl -fsSL https://mise.run | sh
 install_path="${MISE_INSTALL_PATH:-$HOME/.local/bin/mise}"
 eval "$($install_path activate --shims bash)"
 echo 'eval "$('"$install_path"' activate --shims bash)"' >> ~/.bashrc
