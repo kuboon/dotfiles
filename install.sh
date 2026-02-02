@@ -26,6 +26,7 @@ echo 'eval "$('"$install_path"' activate --shims fish)"' >> ~/.config/fish/confi
 mise settings add idiomatic_version_file_enable_tools ruby
 mise u -gy lazygit gh
 
+mkdir -p ~/.config/lazygit
 ln -sf ~/dotfiles/lazygit/config.yml ~/.config/lazygit/config.yml
 
 mkdir -p ~/.claude
