@@ -13,7 +13,7 @@ fi
 sudo apt-get update
 DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends fish
 
-sudo chsh -s /usr/bin/fish $USER
+sudo chsh -s /usr/bin/fish $(whoami)
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
