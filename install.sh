@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -ue
 
-
-
 if grep -q "bullseye" /etc/os-release; then
   sudo apt-get update
   DEBIAN_FRONTEND=noninteractive sudo apt-get -y install --no-install-recommends gpg
@@ -17,11 +15,13 @@ sudo chsh -s /usr/bin/fish $(whoami)
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
-curl -fsSL https://mise.run | sh
-install_path="${MISE_INSTALL_PATH:-$HOME/.local/bin/mise}"
-eval "$($install_path activate --shims bash)"
-echo 'eval "$('"$install_path"' activate --shims bash)"' >> ~/.bashrc
-echo 'eval "$('"$install_path"' activate --shims fish)"' >> ~/.config/fish/config.fish
+if ! command -v mise &> /dev/null; then
+  curl -fsSL https://mise.run | sh
+  install_path="${MISE_INSTALL_PATH:-$HOME/.local/bin/mise}"
+  eval "$($install_path activate --shims bash)"
+  echo 'eval "$('"$install_path"' activate --shims bash)"' >> ~/.bashrc
+  echo 'eval "$('"$install_path"' activate --shims fish)"' >> ~/.config/fish/config.fish
+fi
 
 mise settings add idiomatic_version_file_enable_tools ruby
 mise u -gy lazygit gh rg
