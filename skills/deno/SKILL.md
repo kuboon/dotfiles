@@ -1,105 +1,71 @@
 ---
 name: deno
-description: Deno 2 development workflow including testing with permissions and JSR package management. Use when working with Deno projects, setting up new Deno applications, or when the user mentions Deno, JSR, or modern JavaScript/TypeScript development.
+description: Rules for using Deno
+metadata:
+  url: https://gist.github.com/kuboon/b0d7c4384a9baf3c650be6d6fdd5665a
+  updated_on: 2026-04-01
 ---
 
-# Deno Development
+# Imports
 
-## Version Requirements
-- Always use Deno 2
+## bad
 
-## Testing
-- Use `deno test -P` for running tests with permissions granted
-- The `-P` flag allows permissions described in `deno.json` during testing.
-- Define test permissions in the `test` section of `deno.json`.
-
-## Package Management
-- Use JSR (JavaScript Registry) for package dependencies https://jsr.io/
-- JSR is the modern package registry for JavaScript and TypeScript
-
-## Common Commands
-
-### Adding Dependencies
-```bash
-# Add from JSR
-deno add jsr:@std/log
-deno add jsr:@std/path
-
-# Add from npm (when necessary)
-deno add npm:express
+```ts
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 ```
 
-### Running Tests
-```bash
-# Run all tests with permissions
-deno test -P
+## good
 
-# Run specific test file
-deno test -P test/example.test.ts
+run
+
+- `deno add jsr:@std/http`
+- `deno add npm:tailwindcss` to add the import map, then
+
+```ts
+import { serve } from "@std/http/server.ts";
+import { serve } from "tailwindcss";
 ```
 
-### Running Applications
-```bash
-# Run with limited permissions - AVOID -A unless absolutely necessary
-deno run --allow-read=. main.ts
-deno run --allow-net --allow-read=./public server.ts
-deno run --allow-env --allow-read=. config.ts
+# Permissions
 
-# for `export default { fetch }`
-deno serve serve.ts
+## bad
 
-# Use permission sets from deno.json
-deno run -P main.ts
+```sh
+deno run --allow-net server.ts
 ```
 
-## Configuration with deno.json
+## good
 
-### Permission Sets
-Define permission sets in deno.json for consistent security:
+Write a `deno.json` file in the root of your project:
 
 ```json
 {
   "permissions": {
     "default": {
-      "read": ["."],
+      "net": ["example.com", "api.example.com"],
+      "read": ["./data/*"],
       "env": {
-        "allow": ["NODE_ENV", "PORT"],
-        "deny": ["SECRET_KEY"],
-        "ignore": ["TEMP_*"]
+        "ignore": true,
+        "allow": ["API_KEY", "DATABASE_URL"]
       }
     },
-    "server": {
-      "read": ["./public"],
-      "net": ["localhost:8000", "deno.land"],
-      "env": {
-        "allow": ["DATABASE_URL", "API_KEY"]
-      }
+    "build": {
+      "net": ["deno.land"],
+      "read": ["./src/*"],
+      "write": ["./dist/*"]
     }
   }
 }
 ```
 
-### Test Permissions
-Configure test permissions in deno.json:
+Then run your script with the `-P` flags:
 
-```json
-{
-  "test": {
-    "permissions": {
-      "read": ["."],
-      "net": true
-    }
-  }
-}
+```sh
+deno run -P server.ts
+deno run -P=build build.ts
 ```
 
-## Best Practices
-- NEVER use `-A` (all permissions) unless absolutely necessary
-- Always use the most restrictive permissions possible
-- Use `--allow-read=.` instead of `--allow-read` to limit to current directory
-- Use permission sets in deno.json for consistent security
-- Define test permissions in deno.json under the `test` section
-- Use `env.allow`, `env.deny`, and `env.ignore` for fine-grained environment variable control (`read.ignore` also available)
-- Do not use `import` statements with full URLs for external dependencies. Instead, use `deno add` first.
-- Leverage Deno's built-in security features
-- Use JSR for package discovery and management
+## reference
+
+- https://github.com/denoland/deno/blob/main/cli/schemas/config-file.v1.json
+- https://docs.deno.com/runtime/fundamentals/configuration/#permissions
