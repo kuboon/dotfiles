@@ -15,15 +15,17 @@ sudo chsh -s /usr/bin/fish $(whoami)
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
-if ! command -v mise &> /dev/null; then
+MISE_INSTALL_PATH=$(which mise)
+if [ -z "$MISE_INSTALL_PATH" ]; then
   curl -fsSL https://mise.run | sh
-  install_path="${MISE_INSTALL_PATH:-$HOME/.local/bin/mise}"
-  eval "$($install_path activate --shims bash)"
-  echo 'eval "$('"$install_path"' activate --shims bash)"' >> ~/.bashrc
-  echo 'eval "$('"$install_path"' activate --shims fish)"' >> ~/.config/fish/config.fish
+  MISE_INSTALL_PATH=$HOME/.local/bin/mise
 fi
+source <($MISE_INSTALL_PATH activate --shims bash)
+echo "source <($MISE_INSTALL_PATH activate --shims bash)" >> ~/.bashrc
+echo "$MISE_INSTALL_PATH activate --shims fish | source" >> ~/.config/fish/config.fish
 
 mise settings add idiomatic_version_file_enable_tools ruby
+mise settings ruby.compile=false 
 mise u -gy lazygit gh rg
 
 mkdir -p ~/.config/lazygit
