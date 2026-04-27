@@ -15,7 +15,7 @@ sudo chsh -s /usr/bin/fish $(whoami)
 fish ./setup.fish
 
 # https://mise.jdx.dev/getting-started.html
-MISE_INSTALL_PATH=$(which mise)
+MISE_INSTALL_PATH=$(command -v mise || true)
 if [ -z "$MISE_INSTALL_PATH" ]; then
   curl -fsSL https://mise.run | sh
   MISE_INSTALL_PATH=$HOME/.local/bin/mise
