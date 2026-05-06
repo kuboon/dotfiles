@@ -25,8 +25,8 @@ echo "source <($MISE_INSTALL_PATH activate --shims bash)" >> ~/.bashrc
 echo "$MISE_INSTALL_PATH activate --shims fish | source" >> ~/.config/fish/config.fish
 
 mise settings add idiomatic_version_file_enable_tools ruby
-mise settings ruby.compile=false 
-mise u -gy lazygit gh rg
+mise settings ruby.compile=false
+mise u -gy lazygit gh rg claude
 
 mkdir -p ~/.config/lazygit
 ln -sf ~/dotfiles/lazygit/config.yml ~/.config/lazygit/config.yml
