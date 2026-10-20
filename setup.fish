@@ -4,7 +4,6 @@ fish_add_path ~/dotfiles/bin
 # https://unix.stackexchange.com/a/631801
 function add_history_entry
   begin
-    flock 1
     and echo -- '- cmd:' (
       string replace -- \n \\n (string join ' ' $argv) | string replace \\ \\\\
     )
@@ -22,3 +21,4 @@ add_history_entry 'gh auth login'
 add_history_entry 'curl -fsSL https://opencode.ai/install | bash'
 
 set -Ua fish_function_path (pwd)/fish/functions
+set -Ua fish_complete_path (pwd)/fish/completions
